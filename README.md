@@ -21,3 +21,11 @@ migration file created
 db upgrade
    ↓
 PostgreSQL database actually changes
+
+
+Build the CRUD API endpoints. Implement them gradually, not all at once:
+POST /songs → create song ---> done
+GET /songs → get all songs. ----> done
+GET /songs/ → get one song  ----> get song by id. ---> done
+PUT /songs/ → update song
+DELETE /songs/ → delete song
