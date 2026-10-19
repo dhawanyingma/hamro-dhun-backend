@@ -1,6 +1,6 @@
 from app import app, db
-from flask import request
-from sqlalchemy import text
+from flask import jsonify, request
+from sqlalchemy import or_, text,select
 from app.models.songs import Song
 
 @app.route("/")
@@ -51,6 +51,42 @@ def get_songs():
         )
     return result, 200
 
+@app.get("/songs/search")
+def search_songs():
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify({"message": "Please provide a search term in q"}), 400
+
+    sort_by = request.args.get("sort", "").strip().lower()
+
+
+
+    stmt = (select(Song)
+            .where(
+                or_(
+                    Song.title.ilike(f"%{q}%"),
+                    Song.artist.ilike(f"%{q}%"),
+                    Song.lyrics.ilike(f"%{q}%")
+                )
+            )
+            .order_by(Song.title.asc())
+            )
+    
+    results = db.session.execute(stmt)
+    songs = results.scalars().all()
+
+    song_list=[]
+    for song in songs:
+        song_list.append({
+            "id": song.id,
+            "title": song.title,
+            "artist": song.artist,
+            "lyrics": song.lyrics,
+            "chords": song.chords
+        })
+    return jsonify(song_list), 200
+
+
 @app.route("/songs/<int:id>", methods=["GET"])
 def get_song_by_id(id):
     song = db.session.get(Song, id)
@@ -67,7 +103,7 @@ def get_song_by_id(id):
         "lyrics": song.lyrics,
         "chords": song.chords
     }
-    return requested_song, 200
+    return jsonify(requested_song), 200
 
 @app.route("/songs/<int:id>", methods=["PATCH"])
 def song_update(id):
