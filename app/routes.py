@@ -5,10 +5,77 @@ from app.models.songs import Song
 
 @app.route("/")
 def home():
+    """
+    Check that the API is responding.
+    ---
+    tags:
+      - General
+    responses:
+      200:
+        description: API is responding.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Your flask app is running
+    """
     return {"message":"Your flask app is running"}
 
 @app.route("/songs", methods= ["POST"])
 def create_song():
+    """
+    Create a song.
+    ---
+    tags:
+      - Songs
+    parameters:
+      - name: song
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - title
+            - artist
+            - lyrics
+          properties:
+            title:
+              type: string
+              example: Example Song
+            artist:
+              type: string
+              example: Example Artist
+            lyrics:
+              type: string
+              example: Example lyrics
+            chords:
+              type: string
+              example: C G Am F
+    responses:
+      201:
+        description: Song created successfully.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Song created successfully
+            song:
+              type: object
+              properties:
+                id:
+                  type: integer
+                title:
+                  type: string
+                artist:
+                  type: string
+                chords:
+                  type: string
+      400:
+        description: Request body or required song fields are missing.
+    """
+
     data = request.get_json()
     if not data:
         return {"error": "Request Body is requested"}, 400
@@ -33,9 +100,36 @@ def create_song():
                 "chords" : song.chords
             }
         },201
+
     
 @app.route("/songs", methods=["GET"])
 def get_songs():
+
+    """
+    Get all songs.
+    ---
+    tags:
+      - Songs
+    responses:
+      200:
+        description: List of songs.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              artist:
+                type: string
+              lyrics:
+                type: string
+              chords:
+                type: string
+    """
+
     songs = db.session.scalars(db.select(Song).order_by(Song.id)).all()
     result = []
 
@@ -51,8 +145,42 @@ def get_songs():
         )
     return result, 200
 
+
 @app.get("/songs/search")
 def search_songs():
+    """
+    Search songs by title, artist, or lyrics.
+    ---
+    tags:
+      - Songs
+    parameters:
+      - name: q
+        in: query
+        type: string
+        required: true
+        description: Text to search for.
+    responses:
+      200:
+        description: Matching songs, or an empty list if there are no matches.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              artist:
+                type: string
+              lyrics:
+                type: string
+              chords:
+                type: string
+      400:
+        description: The q query parameter is missing or blank.
+    """
+
     q = request.args.get("q", "").strip()
     if not q:
         return jsonify({"message": "Please provide a search term in q"}), 400
@@ -89,6 +217,37 @@ def search_songs():
 
 @app.route("/songs/<int:id>", methods=["GET"])
 def get_song_by_id(id):
+    """
+    Get a song by its ID.
+    ---
+    tags:
+      - Songs
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: ID of the song to retrieve.
+    responses:
+      200:
+        description: The requested song.
+        schema:
+          type: object
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            artist:
+              type: string
+            lyrics:
+              type: string
+            chords:
+              type: string
+      404:
+        description: Song with that ID was not found.
+    """
+
     song = db.session.get(Song, id)
 
     if not song:
@@ -107,6 +266,61 @@ def get_song_by_id(id):
 
 @app.route("/songs/<int:id>", methods=["PATCH"])
 def song_update(id):
+
+    """
+    Update a song.
+    ---
+    tags:
+      - Songs
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: ID of the song to update.
+      - name: song
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Updated Song Title
+            artist:
+              type: string
+              example: Updated Artist
+            lyrics:
+              type: string
+              example: Updated lyrics
+            chords:
+              type: string
+              example: D A Bm G
+    responses:
+      200:
+        description: Song details updated successfully.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            song:
+              type: object
+              properties:
+                title:
+                  type: string
+                artist:
+                  type: string
+                lyrics:
+                  type: string
+                chords:
+                  type: string
+      400:
+        description: Request body is missing.
+      404:
+        description: Song with that ID was not found.
+    """
+
     song = db.session.get(Song, id)
     if not song:
         return {
@@ -140,6 +354,31 @@ def song_update(id):
 
 @app.route("/songs/<int:id>", methods = ["DELETE"])
 def delete_song(id):
+
+    """
+    Delete a song.
+    ---
+    tags:
+      - Songs
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: ID of the song to delete.
+    responses:
+      200:
+        description: Song was deleted successfully.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Song has been deleted successfully.
+      404:
+        description: Song with that ID was not found.
+    """
+    
     song = db.session.get(Song, id)
     if not song:
         return { 
